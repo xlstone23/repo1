@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+          http://www.springframework.org/schema/aop
+           http://www.springframework.org/schema/aop/spring-aop.xsd
+            http://www.springframework.org/schema/tx
+             http://www.springframework.org/schema/tx/spring-tx.xsd"
+>
+    <context:component-scan base-package="com.lagou"></context:component-scan>
+
+    <!--把数据库连接池交给IOC容器-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
+        <property name="url" value="jdbc:mysql://localhost:3306/springbootdata?characterEncoding=utf-8&amp;useSSL=false"></property>
+        <property name="username" value="root"></property>
+        <property name="password" value="123456"></property>
+    </bean>
+
+    <!--把JdbcTemplate交给IOC容器-->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <constructor-arg name="dataSource" ref="dataSource"></constructor-arg>
+    </bean>
+
+    <!--事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!--通知增强-->
+    <tx:advice id="myAdvice1" transaction-manager="transactionManager">
+        <!--定义事务的属性-->
+        <tx:attributes>
+            <tx:method name="insertALL" isolation="REPEATABLE_READ"
+                       propagation="REQUIRED" timeout="-1" read-only="false" />
+        </tx:attributes>
+    </tx:advice>
+
+    <!--aop配置-->
+    <aop:config>
+        <!--切面配置-->
+        <aop:pointcut id="myPoint" expression="execution(* com.lagou.service.impl.ArticleServiceImpl.*(..))"/>
+        <aop:advisor advice-ref="myAdvice1" pointcut-ref="myPoint"></aop:advisor>
+        <aop:aspect ref="myadvice" >
+            <aop:before method="before" pointcut-ref="myPoint"></aop:before>
+        </aop:aspect>
+
+    </aop:config>
+</beans>
